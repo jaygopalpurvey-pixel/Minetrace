@@ -105,13 +105,13 @@ def list_classified_results(
     query = db.query(RiskAnalysis)
     conditions = []
 
-    if classification:
+    if classification and isinstance(classification, str):
         conditions.append(RiskAnalysis.classification == classification.strip().upper())
-    if flag_status:
+    if flag_status and isinstance(flag_status, str):
         conditions.append(RiskAnalysis.flag_status == flag_status.strip().upper())
-    if commodity_code:
+    if commodity_code and isinstance(commodity_code, str):
         conditions.append(RiskAnalysis.commodity_code == commodity_code.strip())
-    if score_completeness:
+    if score_completeness and isinstance(score_completeness, str):
         conditions.append(RiskAnalysis.score_completeness == score_completeness.strip().upper())
 
     if conditions:

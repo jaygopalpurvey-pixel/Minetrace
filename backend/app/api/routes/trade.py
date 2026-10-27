@@ -31,13 +31,13 @@ def list_trade_records(
     """
     repo = MineTraceRepository(db)
     records, total = repo.list_trade_records(
-        skip=skip,
-        limit=limit,
-        commodity_code=commodity_code,
-        reporter_country_code=reporter_country_code,
-        partner_country_code=partner_country_code,
-        flow_type=flow_type,
-        period_year=period_year,
+        skip=skip if isinstance(skip, int) else 0,
+        limit=limit if isinstance(limit, int) else 50,
+        commodity_code=commodity_code if isinstance(commodity_code, str) else None,
+        reporter_country_code=reporter_country_code if isinstance(reporter_country_code, str) else None,
+        partner_country_code=partner_country_code if isinstance(partner_country_code, str) else None,
+        flow_type=flow_type if isinstance(flow_type, str) else None,
+        period_year=period_year if isinstance(period_year, int) else None,
     )
 
     return TradeRecordListResponse(

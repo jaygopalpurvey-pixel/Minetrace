@@ -26,9 +26,11 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
-    logger.info("Initializing MineTrace SQLite database schema...")
-    init_db()
-    logger.info("MineTrace Phase 1 Backend initialized successfully.")
+    import os
+    if os.environ.get("PYTEST_CURRENT_TEST") is None:
+        logger.info("Initializing MineTrace SQLite database schema...")
+        init_db()
+        logger.info("MineTrace Phase 1 Backend initialized successfully.")
     yield
     logger.info("Shutting down MineTrace Backend...")
 

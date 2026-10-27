@@ -4,8 +4,9 @@ import sys
 import asyncio
 from pathlib import Path
 
-if sys.platform == "win32":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+# Use default Proactor loop on Windows for Python 3.12 compatibility
+# if sys.platform == "win32":
+#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import pytest
 import pytest_asyncio

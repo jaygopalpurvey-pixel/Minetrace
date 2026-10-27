@@ -183,15 +183,15 @@ class MineTraceRepository:
         query = self.db.query(NormalizedTradeRecord)
         
         conditions = []
-        if commodity_code:
+        if commodity_code and isinstance(commodity_code, str):
             conditions.append(NormalizedTradeRecord.commodity_code == commodity_code.strip())
-        if reporter_country_code:
+        if reporter_country_code and isinstance(reporter_country_code, str):
             conditions.append(NormalizedTradeRecord.reporter_country_code == reporter_country_code.strip().upper())
-        if partner_country_code:
+        if partner_country_code and isinstance(partner_country_code, str):
             conditions.append(NormalizedTradeRecord.partner_country_code == partner_country_code.strip().upper())
-        if flow_type:
+        if flow_type and isinstance(flow_type, str):
             conditions.append(NormalizedTradeRecord.flow_type == flow_type.strip().upper())
-        if period_year:
+        if period_year and isinstance(period_year, int):
             conditions.append(NormalizedTradeRecord.period_year == period_year)
 
         if conditions:

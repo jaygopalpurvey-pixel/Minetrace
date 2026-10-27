@@ -1,0 +1,12 @@
+{
+  "name": "minetrace",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MineTrace — Critical Mineral Supply-Chain Risk Intelligence Platform",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "lint": "npm --prefix frontend run lint"
+  }
+}

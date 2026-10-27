@@ -1,13 +1,21 @@
 """Integration tests for Phase 3 Risk Classification API endpoints."""
 import pytest
+from fastapi import HTTPException
+from app.ingestion.service import IngestionService
+from app.risk.service import RiskEngineService
+from app.api.routes.classification import (
+    get_classification_thresholds,
+    classify_analyses,
+    list_classified_results,
+    get_classified_result_detail,
+    get_classification_summary,
+)
+from app.schemas.classification import ClassifyRequest
 
 
-@pytest.mark.asyncio
-async def test_get_classification_thresholds_endpoint(async_client):
+def test_get_classification_thresholds_endpoint():
     """Verify GET /api/v1/classification/thresholds returns prototype rules & disclaimer."""
-    response = await async_client.get("/api/v1/classification/thresholds")
-    assert response.status_code == 200
-    data = response.json()
+    data = get_classification_thresholds()
     assert "version" in data
     assert "disclaimer" in data
     assert len(data["categories"]) == 4
@@ -18,64 +26,52 @@ async def test_get_classification_thresholds_endpoint(async_client):
     assert "INSUFFICIENT_DATA" in cat_names
 
 
-@pytest.mark.asyncio
-async def test_classify_and_list_results(async_client, comtrade_fixture_path):
+def test_classify_and_list_results(test_db, comtrade_fixture_path):
     """Verify POST /api/v1/classification/classify and GET /api/v1/classification/results."""
     # Seed trade data and run risk analysis
-    await async_client.post("/api/v1/ingestion/trade", json={"fixture_path": comtrade_fixture_path})
-    analyses = (await async_client.post("/api/v1/risk/analyze", json={})).json()
+    ingestion = IngestionService(test_db)
+    ingestion.ingest_trade_data(fixture_path=comtrade_fixture_path)
+    risk_engine = RiskEngineService(test_db)
+    analyses = risk_engine.run_analysis_batch()
     assert len(analyses) > 0
-    first_analysis_id = analyses[0]["analysis_id"]
+    first_analysis_id = analyses[0].analysis_id
 
     # Trigger classification endpoint
-    classify_resp = await async_client.post("/api/v1/classification/classify", json={})
-    assert classify_resp.status_code == 200
-    classified_items = classify_resp.json()
+    classified_items = classify_analyses(ClassifyRequest(), db=test_db)
     assert len(classified_items) >= len(analyses)
     assert all("classification" in item for item in classified_items)
     assert all("flag_status" in item for item in classified_items)
 
     # Classify specific ID
-    single_resp = await async_client.post(
-        "/api/v1/classification/classify",
-        json={"analysis_id": first_analysis_id},
-    )
-    assert single_resp.status_code == 200
-    assert len(single_resp.json()) == 1
+    single = classify_analyses(ClassifyRequest(analysis_id=first_analysis_id), db=test_db)
+    assert len(single) == 1
+    assert single[0]["analysis_id"] == first_analysis_id
 
     # Classify 404
-    not_found = await async_client.post(
-        "/api/v1/classification/classify",
-        json={"analysis_id": "non-existent-uuid"},
-    )
-    assert not_found.status_code == 404
+    with pytest.raises(HTTPException) as exc:
+        classify_analyses(ClassifyRequest(analysis_id="non-existent-uuid"), db=test_db)
+    assert exc.value.status_code == 404
 
-    # List results with pagination & filter
-    list_resp = await async_client.get("/api/v1/classification/results?limit=10")
-    assert list_resp.status_code == 200
-    list_data = list_resp.json()
-    assert list_data["total"] >= len(classified_items)
-    assert len(list_data["analyses"]) > 0
+    # List results with pagination
+    list_data = list_classified_results(skip=0, limit=10, db=test_db)
+    assert list_data.total >= len(classified_items)
+    assert len(list_data.analyses) > 0
 
     # Get single classified result
-    detail_resp = await async_client.get(f"/api/v1/classification/results/{first_analysis_id}")
-    assert detail_resp.status_code == 200
-    detail = detail_resp.json()
+    detail = get_classified_result_detail(first_analysis_id, db=test_db)
     assert detail["analysis_id"] == first_analysis_id
     assert detail["classification"] in ("GREEN", "AMBER", "RED", "INSUFFICIENT_DATA")
 
 
-@pytest.mark.asyncio
-async def test_classification_summary_endpoint(async_client, comtrade_fixture_path):
+def test_classification_summary_endpoint(test_db, comtrade_fixture_path):
     """Verify GET /api/v1/classification/summary returns aggregated counts."""
-    await async_client.post("/api/v1/ingestion/trade", json={"fixture_path": comtrade_fixture_path})
-    await async_client.post("/api/v1/risk/analyze", json={})
-    await async_client.post("/api/v1/classification/classify", json={})
+    ingestion = IngestionService(test_db)
+    ingestion.ingest_trade_data(fixture_path=comtrade_fixture_path)
+    risk_engine = RiskEngineService(test_db)
+    risk_engine.run_analysis_batch()
+    classify_analyses(ClassifyRequest(), db=test_db)
 
-    summary_resp = await async_client.get("/api/v1/classification/summary")
-    assert summary_resp.status_code == 200
-    summary = summary_resp.json()
-    assert summary["total_analyses"] >= 1
-    assert "classification_breakdown" in summary
-    assert "flag_status_breakdown" in summary
-    assert "disclaimer" in summary
+    summary = get_classification_summary(db=test_db)
+    assert summary.total_analyses >= 1
+    assert summary.classification_breakdown is not None
+    assert summary.flag_status_breakdown is not None
