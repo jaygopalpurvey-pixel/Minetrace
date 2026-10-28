@@ -5,6 +5,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { SecondaryButton } from '@/components/ui/SecondaryButton';
 import { IconButton } from '@/components/ui/IconButton';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { API_BASE_URL } from '@/services/api';
 
 export interface TopNavbarProps {
   pageTitle: string;
@@ -91,13 +92,13 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
         </Tooltip>
 
         {/* API Docs Link */}
-        <Tooltip content="Open Backend Interactive OpenAPI Docs (127.0.0.1:8000/docs)">
+        <Tooltip content={`Open Backend Interactive OpenAPI Docs (${API_BASE_URL || 'http://127.0.0.1:8000'}/docs)`}>
           <SecondaryButton
             size="sm"
             variant="outline"
             leftIcon={<Terminal className="w-3.5 h-3.5 text-[#43D9FF]" />}
             rightIcon={<ExternalLink className="w-3 h-3 text-[#8D9AB2]" />}
-            onClick={() => window.open('http://127.0.0.1:8000/docs', '_blank')}
+            onClick={() => window.open(`${API_BASE_URL || 'http://127.0.0.1:8000'}/docs`, '_blank')}
             className="hidden sm:inline-flex text-xs font-mono"
           >
             API DOCS

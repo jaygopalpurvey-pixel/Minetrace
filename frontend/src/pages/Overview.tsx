@@ -8,7 +8,7 @@ import { PriorityInvestigationsPanel } from '@/components/dashboard/PriorityInve
 import { MineralRiskChartPanel } from '@/components/dashboard/MineralRiskChartPanel';
 import { RecentActivityPanel } from '@/components/dashboard/RecentActivityPanel';
 import { SecondaryButton } from '@/components/ui/SecondaryButton';
-import { loadDashboardOverview } from '@/services/api';
+import { loadDashboardOverview, API_BASE_URL } from '@/services/api';
 import { DashboardData } from '@/types/api';
 
 export const OverviewPage: React.FC = () => {
@@ -87,7 +87,7 @@ export const OverviewPage: React.FC = () => {
           <div className="flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 text-[#FFB547]" />
             <span>
-              Backend engine is offline (127.0.0.1:8000). Displaying local standby mode with placeholders.
+              Backend engine is offline ({API_BASE_URL || '127.0.0.1:8000'}). Displaying local standby mode with placeholders.
             </span>
           </div>
           <SecondaryButton

@@ -29,6 +29,16 @@ import {
 
 const DEFAULT_TIMEOUT_MS = 4000;
 
+export const API_BASE_URL = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '');
+
+export function getApiUrl(path: string): string {
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return API_BASE_URL ? `${API_BASE_URL}${cleanPath}` : cleanPath;
+}
+
 async function fetchWithTimeout<T>(url: string, signal?: AbortSignal): Promise<T | null> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -38,8 +48,10 @@ async function fetchWithTimeout<T>(url: string, signal?: AbortSignal): Promise<T
     signal.addEventListener('abort', () => controller.abort());
   }
 
+  const targetUrl = getApiUrl(url);
+
   try {
-    const res = await fetch(url, {
+    const res = await fetch(targetUrl, {
       signal: controller.signal,
       headers: { Accept: 'application/json' },
     });
@@ -57,7 +69,7 @@ async function fetchWithTimeout<T>(url: string, signal?: AbortSignal): Promise<T
       // Aborted or timed out
       return null;
     }
-    console.warn(`[MineTrace API] Request to ${url} failed:`, err);
+    console.warn(`[MineTrace API] Request to ${targetUrl} failed:`, err);
     return null;
   }
 }
@@ -192,7 +204,7 @@ export async function explainRiskQuery(
   signal?: AbortSignal
 ): Promise<ExplainResponse | null> {
   try {
-    const res = await fetch('/api/v1/ai/explain', {
+    const res = await fetch(getApiUrl('/api/v1/ai/explain'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -222,7 +234,7 @@ export async function generatePdfReport(
       : params;
 
   try {
-    const res = await fetch('/api/v1/reports/pdf', {
+    const res = await fetch(getApiUrl('/api/v1/reports/pdf'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

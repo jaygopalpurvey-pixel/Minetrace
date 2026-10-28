@@ -2,6 +2,8 @@
  * Service to check MineTrace backend connectivity in a safe, non-blocking manner.
  */
 
+import { getApiUrl } from './api';
+
 export interface SystemHealth {
   connected: boolean;
   statusText: string;
@@ -14,7 +16,7 @@ export async function checkBackendHealth(): Promise<SystemHealth> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 2500);
 
-    const response = await fetch('/health', {
+    const response = await fetch(getApiUrl('/health'), {
       signal: controller.signal,
       headers: { Accept: 'application/json' },
     });
